@@ -7,7 +7,9 @@ class Match:
 
     def __init__(self, view1, view2, match_path):
 
-        self.indices1 = self.indices2 = self.distances = []
+        self.indices1 = []
+        self.indices2 = []
+        self.distances = []
         self.image_name1 = view1.name
         self.image_name2 = view2.name
         self.root_path = view1.root_path
