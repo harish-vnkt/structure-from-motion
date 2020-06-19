@@ -72,8 +72,9 @@ def create_matches(views):
     if os.path.exists(root_path + '/matches'):
         match_path = True
 
-    matches = []
-    for i in range(1, len(views)):
-        matches.append(Match(views[i - 1], views[i], match_path))
+    matches = {}
+    for i in range(0, len(views) - 1):
+        for j in range(i+1, len(views)):
+            matches[(views[i].name, views[j].name)] = Match(views[i], views[j], match_path)
 
     return matches
