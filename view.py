@@ -16,14 +16,15 @@ class View:
         self.descriptors = []
         self.feature_type = feature_type
         self.root_path = root_path
-        self.point_map = []
+        self.R = np.zeros((3, 3), dtype=float)
+        self.t = np.zeros((3, 1), dtype=float)
 
         if not feature_path:
             self.extract_features()
         else:
             self.read_features()
 
-        self.point_map = [False] * len(self.keypoints)
+        self.point_map = np.zeros((len(self.keypoints),), dtype=bool)
 
     def extract_features(self):
 
