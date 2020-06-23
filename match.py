@@ -13,6 +13,8 @@ class Match:
         self.image_name1 = view1.name
         self.image_name2 = view2.name
         self.root_path = view1.root_path
+        self.inliers1 = []
+        self.inliers2 = []
 
         if view1.feature_type in ['sift', 'surf']:
             self.matcher = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
