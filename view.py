@@ -24,7 +24,7 @@ class View:
         else:
             self.read_features()
 
-        self.point_map = np.zeros((len(self.keypoints),), dtype=bool)
+        self.point_map = {}
 
     def extract_features(self):
 
