@@ -15,6 +15,7 @@ class SFM:
         self.points_3D = np.zeros((0, 3))
         self.point_counter = 0
         self.point_map = {}
+        self.done = []
 
         for view in self.views:
             self.names.append(view.name)
@@ -23,21 +24,45 @@ class SFM:
 
         return self.names.index(view.name)
 
-    def compute_pose(self, view1, view2, is_baseline=False):
+    def remove_mapped_points(self, match_object, image_idx):
 
-        match_object = self.matches[(view1.name, view2.name)]
-        pixel_points1, pixel_points2 = get_keypoints_from_indices(keypoints1=view1.keypoints, keypoints2=view2.keypoints, index_list1=match_object.indices1,
-                                                                  index_list2=match_object.indices2)
-        F, mask = cv2.findFundamentalMat(pixel_points1, pixel_points2, method=cv2.FM_RANSAC, ransacReprojThreshold=0.1, confidence=0.99)
-        mask = mask.astype(bool).flatten()
-        match_object.inliers1 = np.array(match_object.indices1)[mask]
-        match_object.inliers2 = np.array(match_object.indices2)[mask]
+        inliers1 = []
+        inliers2 = []
 
-        if is_baseline:
+        for i in range(match_object.inliers1):
+            if (image_idx, match_object.inliers1[i]) not in self.point_map:
+                inliers1.append(match_object.inliers1[i])
+                inliers2.append(match_object.inliers2[i])
+
+        match_object.inliers1 = inliers1
+        match_object.inliers2 = inliers2
+
+    def compute_pose(self, view1, view2=None, is_baseline=False):
+
+        if is_baseline and view2:
+
+            match_object = self.matches[(view1.name, view2.name)]
+            F = remove_outliers_using_F(view1, view2, match_object)
+
             E = self.K.T @ F @ self.K
             view1.R = np.eye(3, 3)
             view2.R, view2.t = get_camera_from_E(E)
             self.triangulate(view1, view2)
+            self.done.append(view1)
+            self.done.append(view2)
+
+        else:
+
+            view1.R, view1.t = self.compute_pose_PNP(view1)
+
+            for i, old_view in enumerate(self.done):
+
+                match_object = self.matches[(old_view.name, view1.name)]
+                _ = remove_outliers_using_F(old_view, view1, match_object)
+                self.remove_mapped_points(match_object, i)
+                self.triangulate(old_view, view1)
+
+            self.done.append(view1)
 
     def triangulate(self, view1, view2):
 
@@ -68,7 +93,40 @@ class SFM:
             self.point_map[(self.get_index_of_view(view2), match_object.inliers2[i])] = self.point_counter
             self.point_counter += 1
 
+    def compute_pose_PNP(self, view):
+
+        if view.feature_type in ['sift', 'surf']:
+            matcher = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)
+        else:
+            matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
+
+        old_descriptors = []
+        for old_view in self.done:
+            old_descriptors.append(old_view.descriptors)
+
+        matcher.add(old_descriptors)
+        matcher.train()
+        matches = matcher.match(queryDescriptors=view.descriptors)
+        points_3D, points_2D = np.zeros((0, 3)), np.zeros((0, 2))
+
+        for match in matches:
+            old_image_idx, new_image_kp_idx, old_image_kp_idx = match.imgIdx, match.queryIdx, match.trainIdx
+
+            if (old_image_idx, old_image_kp_idx) in self.point_map:
+                point_2D = np.array(view.keypoints[new_image_kp_idx].pt).T.reshape((1, 2))
+                points_2D = np.concatenate((points_2D, point_2D), axis=0)
+                point_3D = self.points_3D[self.point_map[(old_image_idx, old_image_kp_idx)], :].T.reshape((1, 3))
+                points_3D = np.concatenate((points_3D, point_3D), axis=0)
+
+        _, R, t, _ = cv2.solvePnPRansac(points_3D[:, np.newaxis], points_2D[:, np.newaxis], self.K, None)
+        R, _ = cv2.Rodrigues(R)
+        return R, t
+
     def reconstruct(self):
 
         baseline_view1, baseline_view2 = self.views[0], self.views[1]
         self.compute_pose(view1=baseline_view1, view2=baseline_view2, is_baseline=True)
+
+        for i in range(2, len(self.views)):
+
+            self.compute_pose(view1=self.views[i])
