@@ -1,6 +1,7 @@
 import numpy as np
-import cv2
+import os
 from utils import *
+import open3d as o3d
 
 
 class SFM:
@@ -20,6 +21,11 @@ class SFM:
         for view in self.views:
             self.names.append(view.name)
 
+        if not os.path.exists(self.views[0].root_path + '/points'):
+            os.makedirs(self.views[0].root_path + '/points')
+
+        self.results_path = self.views[0].root_path + '/points/'
+
     def get_index_of_view(self, view):
 
         return self.names.index(view.name)
@@ -29,7 +35,7 @@ class SFM:
         inliers1 = []
         inliers2 = []
 
-        for i in range(match_object.inliers1):
+        for i in range(len(match_object.inliers1)):
             if (image_idx, match_object.inliers1[i]) not in self.point_map:
                 inliers1.append(match_object.inliers1[i])
                 inliers2.append(match_object.inliers2[i])
@@ -122,11 +128,21 @@ class SFM:
         R, _ = cv2.Rodrigues(R)
         return R, t
 
+    def plot_points(self):
+
+        number = len(self.done)
+        filename = self.results_path + str(number) + '_images.ply'
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = o3d.utility.Vector3dVector(self.points_3D)
+        o3d.io.write_point_cloud(filename, pcd)
+
     def reconstruct(self):
 
         baseline_view1, baseline_view2 = self.views[0], self.views[1]
         self.compute_pose(view1=baseline_view1, view2=baseline_view2, is_baseline=True)
+        self.plot_points()
 
         for i in range(2, len(self.views)):
 
             self.compute_pose(view1=self.views[i])
+            self.plot_points()
