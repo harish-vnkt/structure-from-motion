@@ -32,3 +32,18 @@ def get_3D_point(u1, P1, u2, P2):
 
     X = cv2.solve(A, B, flags=cv2.DECOMP_SVD)
     return X[1]
+
+
+def remove_outliers_using_F(view1, view2, match_object):
+
+    pixel_points1, pixel_points2 = get_keypoints_from_indices(keypoints1=view1.keypoints,
+                                                              keypoints2=view2.keypoints,
+                                                              index_list1=match_object.indices1,
+                                                              index_list2=match_object.indices2)
+    F, mask = cv2.findFundamentalMat(pixel_points1, pixel_points2, method=cv2.FM_RANSAC,
+                                     ransacReprojThreshold=0.1, confidence=0.99)
+    mask = mask.astype(bool).flatten()
+    match_object.inliers1 = np.array(match_object.indices1)[mask]
+    match_object.inliers2 = np.array(match_object.indices2)[mask]
+
+    return F
