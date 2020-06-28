@@ -47,3 +47,11 @@ def remove_outliers_using_F(view1, view2, match_object):
     match_object.inliers2 = np.array(match_object.indices2)[mask]
 
     return F
+
+
+def calculate_reprojection_error(point_3D, point_2D, K, P):
+
+    reprojected_point = K @ P @ point_3D.T
+    reprojected_point = cv2.convertPointsFromHomogeneous(reprojected_point.T)[:, 0, :].T
+    error = np.linalg.norm(point_2D.reshape((2, 1))-reprojected_point)
+    return error
