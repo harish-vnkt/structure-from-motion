@@ -1,6 +1,7 @@
 import os
 from utils import *
 import open3d as o3d
+from baseline import Baseline
 
 
 class SFM:
@@ -48,11 +49,9 @@ class SFM:
         if is_baseline and view2:
 
             match_object = self.matches[(view1.name, view2.name)]
-            F = remove_outliers_using_F(view1, view2, match_object)
+            baseline_pose = Baseline(view1, view2, match_object)
+            view2.R, view2.t = baseline_pose.get_pose(self.K)
 
-            E = self.K.T @ F @ self.K
-            view1.R = np.eye(3, 3)
-            view2.R, view2.t = get_camera_from_E(E)
             self.triangulate(view1, view2)
             self.done.append(view1)
             self.done.append(view2)
