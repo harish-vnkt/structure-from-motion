@@ -99,8 +99,8 @@ class Baseline:
     def check_triangulation(points, P):
 
         P = np.vstack((P, np.array([0, 0, 0, 1])))
-        reprojected_points = cv2.perspectiveTransform(points, P)
-        z = reprojected_points[:, -1]
+        reprojected_points = cv2.perspectiveTransform(src=points[np.newaxis], m=P)
+        z = reprojected_points[0, :, -1]
         if (np.sum(z > 0)/z.shape[0]) < 0.75:
             return False
         else:
