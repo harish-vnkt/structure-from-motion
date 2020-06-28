@@ -1,4 +1,3 @@
-import numpy as np
 import os
 from utils import *
 import open3d as o3d
@@ -17,6 +16,7 @@ class SFM:
         self.point_counter = 0
         self.point_map = {}
         self.done = []
+        self.errors = []
 
         for view in self.views:
             self.names.append(view.name)
@@ -83,6 +83,7 @@ class SFM:
                                                                   index_list2=match_object.inliers2)
         pixel_points1 = cv2.convertPointsToHomogeneous(pixel_points1)[:, 0, :]
         pixel_points2 = cv2.convertPointsToHomogeneous(pixel_points2)[:, 0, :]
+        reprojection_error = []
 
         for i in range(len(pixel_points1)):
 
@@ -93,11 +94,16 @@ class SFM:
             u2_normalized = K_inv.dot(u2)
 
             point_3D = get_3D_point(u1_normalized, P1, u2_normalized, P2)
+            point_3D_homogeneous = cv2.convertPointsToHomogeneous(point_3D.T)[:, 0, :]
+            error = calculate_reprojection_error(point_3D_homogeneous, u2[0:2], self.K, P2)
+            reprojection_error.append(error)
             self.points_3D = np.concatenate((self.points_3D, point_3D.T), axis=0)
 
             self.point_map[(self.get_index_of_view(view1), match_object.inliers1[i])] = self.point_counter
             self.point_map[(self.get_index_of_view(view2), match_object.inliers2[i])] = self.point_counter
             self.point_counter += 1
+
+        self.errors.append(np.mean(reprojection_error))
 
     def compute_pose_PNP(self, view):
 
