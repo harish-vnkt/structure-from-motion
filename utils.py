@@ -54,6 +54,7 @@ def calculate_reprojection_error(point_3D, point_2D, K, P):
 
 
 def get_camera_from_E(E):
+    """Calculates rotation and translation component from essential matrix"""
 
     W = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
     W_t = W.T
@@ -67,6 +68,7 @@ def get_camera_from_E(E):
 
 
 def check_determinant(R):
+    """Validates using the determinant of the rotation matrix"""
 
     if np.linalg.det(R) + 1.0 < 1e-9:
         return False
@@ -75,6 +77,7 @@ def check_determinant(R):
 
 
 def check_triangulation(points, P):
+    """Checks whether reconstructed points lie in front of the camera"""
 
     P = np.vstack((P, np.array([0, 0, 0, 1])))
     reprojected_points = cv2.perspectiveTransform(src=points[np.newaxis], m=P)
