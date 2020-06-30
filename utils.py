@@ -46,8 +46,40 @@ def remove_outliers_using_F(view1, view2, match_object):
 
 def calculate_reprojection_error(point_3D, point_2D, K, P):
     """Calculates the reprojection error for a 3D point by projecting it back into the image plane"""
-    
+
     reprojected_point = K @ P @ point_3D.T
     reprojected_point = cv2.convertPointsFromHomogeneous(reprojected_point.T)[:, 0, :].T
     error = np.linalg.norm(point_2D.reshape((2, 1))-reprojected_point)
     return error
+
+
+def get_camera_from_E(E):
+
+    W = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+    W_t = W.T
+    u, w, vt = np.linalg.svd(E)
+
+    R1 = u @ W @ vt
+    R2 = u @ W_t @ vt
+    t1 = u[:, -1].reshape((3, 1))
+    t2 = - t1
+    return R1, R2, t1, t2
+
+
+def check_determinant(R):
+
+    if np.linalg.det(R) + 1.0 < 1e-9:
+        return False
+    else:
+        return True
+
+
+def check_triangulation(points, P):
+
+    P = np.vstack((P, np.array([0, 0, 0, 1])))
+    reprojected_points = cv2.perspectiveTransform(src=points[np.newaxis], m=P)
+    z = reprojected_points[0, :, -1]
+    if (np.sum(z > 0)/z.shape[0]) < 0.75:
+        return False
+    else:
+        return True
