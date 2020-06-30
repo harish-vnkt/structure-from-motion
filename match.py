@@ -71,6 +71,7 @@ class Match:
                     "rb"
                 )
             )
+            logging.info("Read matches from file for view pair pair %s %s", self.image_name1, self.image_name2)
 
             for point in matches:
                 self.distances.append(point[0])
