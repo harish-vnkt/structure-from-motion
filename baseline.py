@@ -25,22 +25,22 @@ class Baseline:
     def check_pose(self, E, K):
         """Retrieves the rotation and translation components from the essential matrix by decomposing it and verifying the validity of the 4 possible solutions"""
 
-        R1, R2, t1, t2 = Baseline.get_camera_from_E(E)  # decompose E
-        if not Baseline.check_determinant(R1):
-            R1, R2, t1, t2 = Baseline.get_camera_from_E(-E)  # change sign of E if R1 fails the determinant test
+        R1, R2, t1, t2 = get_camera_from_E(E)  # decompose E
+        if not check_determinant(R1):
+            R1, R2, t1, t2 = get_camera_from_E(-E)  # change sign of E if R1 fails the determinant test
 
         # solution 1
         reprojection_error, points_3D = self.triangulate(K, R1, t1)
         # check if reprojection is not faulty and if the points are correctly triangulated in the front of the camera
-        if reprojection_error > 100.0 or not Baseline.check_triangulation(points_3D, np.hstack((R1, t1))):
+        if reprojection_error > 100.0 or not check_triangulation(points_3D, np.hstack((R1, t1))):
 
             # solution 2
             reprojection_error, points_3D = self.triangulate(K, R1, t2)
-            if reprojection_error > 100.0 or not Baseline.check_triangulation(points_3D, np.hstack((R1, t2))):
+            if reprojection_error > 100.0 or not check_triangulation(points_3D, np.hstack((R1, t2))):
 
                 # solution 3
                 reprojection_error, points_3D = self.triangulate(K, R2, t1)
-                if reprojection_error > 100.0 or not Baseline.check_triangulation(points_3D, np.hstack((R2, t1))):
+                if reprojection_error > 100.0 or not check_triangulation(points_3D, np.hstack((R2, t1))):
 
                     # solution 4
                     return R2, t2
@@ -95,35 +95,3 @@ class Baseline:
             points_3D = np.concatenate((points_3D, point_3D.T), axis=0)
 
         return np.mean(reprojection_error), points_3D
-
-    @staticmethod
-    def get_camera_from_E(E):
-
-        W = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
-        W_t = W.T
-        u, w, vt = np.linalg.svd(E)
-
-        R1 = u @ W @ vt
-        R2 = u @ W_t @ vt
-        t1 = u[:, -1].reshape((3, 1))
-        t2 = - t1
-        return R1, R2, t1, t2
-
-    @staticmethod
-    def check_determinant(R):
-
-        if np.linalg.det(R) + 1.0 < 1e-9:
-            return False
-        else:
-            return True
-
-    @staticmethod
-    def check_triangulation(points, P):
-
-        P = np.vstack((P, np.array([0, 0, 0, 1])))
-        reprojected_points = cv2.perspectiveTransform(src=points[np.newaxis], m=P)
-        z = reprojected_points[0, :, -1]
-        if (np.sum(z > 0)/z.shape[0]) < 0.75:
-            return False
-        else:
-            return True
