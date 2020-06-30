@@ -49,7 +49,7 @@ class View:
 
         # logic to compute features for images that don't have pkl files
         try:
-            features = pickle.load(open(self.root_path + '/features/' + self.name + '.pkl', "rb"))
+            features = pickle.load(open(os.path.join(self.root_path, 'features', self.name + '.pkl'), "rb"))
             logging.info("Read features from file for image %s", self.name)
 
             keypoints = []
@@ -72,8 +72,8 @@ class View:
     def write_features(self):
         """Stores computed features to pkl files. The files are written inside a features directory inside the root directory"""
 
-        if not os.path.exists(self.root_path + '/features'):
-            os.makedirs(self.root_path + '/features')
+        if not os.path.exists(os.path.join(self.root_path, 'features')):
+            os.makedirs(os.path.join(self.root_path, 'features'))
 
         temp_array = []
         for idx, point in enumerate(self.keypoints):
@@ -81,7 +81,7 @@ class View:
                     self.descriptors[idx])
             temp_array.append(temp)
 
-        features_file = open(self.root_path + '/features/' + self.name + '.pkl', 'wb')
+        features_file = open(os.path.join(self.root_path, 'features', self.name + '.pkl'), 'wb')
         pickle.dump(temp_array, features_file)
         features_file.close()
 
@@ -93,10 +93,10 @@ def create_views(root_path, image_format='jpg'):
 
     # if features directory exists, the feature files are read from there
     logging.info("Created features directory")
-    if os.path.exists(root_path + '/features'):
+    if os.path.exists(os.path.join(root_path, 'features')):
         feature_path = True
 
-    image_names = sorted(glob.glob(root_path + '/images/*.' + image_format))
+    image_names = sorted(glob.glob(os.path.join(root_path, 'images', '*.' + image_format)))
 
     logging.info("Computing features")
     views = []

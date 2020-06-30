@@ -49,15 +49,15 @@ class Match:
     def write_matches(self):
         """Writes a match to a pkl file in the root_path/matches directory"""
 
-        if not os.path.exists(self.root_path + '/matches'):
-            os.makedirs(self.root_path + '/matches')
+        if not os.path.exists(os.path.join(self.root_path, 'matches')):
+            os.makedirs(os.path.join(self.root_path, 'matches'))
 
         temp_array = []
         for i in range(len(self.indices1)):
             temp = (self.distances[i], self.indices1[i], self.indices2[i])
             temp_array.append(temp)
 
-        matches_file = open(self.root_path + '/matches/' + self.image_name1 + '_' + self.image_name2 + '.pkl', 'wb')
+        matches_file = open(os.path.join(self.root_path, 'matches', self.image_name1 + '_' + self.image_name2 + '.pkl'), 'wb')
         pickle.dump(temp_array, matches_file)
         matches_file.close()
 
@@ -67,7 +67,7 @@ class Match:
         try:
             matches = pickle.load(
                 open(
-                    self.root_path + '/matches/' + self.image_name1 + '_' + self.image_name2 + '.pkl',
+                    os.path.join(self.root_path, 'matches', self.image_name1 + '_' + self.image_name2 + '.pkl'),
                     "rb"
                 )
             )
@@ -89,7 +89,7 @@ def create_matches(views):
 
     root_path = views[0].root_path
 
-    if os.path.exists(root_path + '/matches'):
+    if os.path.exists(os.path.join(root_path, 'matches')):
         match_path = True
 
     matches = {}

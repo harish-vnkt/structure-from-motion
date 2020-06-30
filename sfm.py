@@ -26,7 +26,7 @@ class SFM:
             os.makedirs(self.views[0].root_path + '/points')
 
         # store results in a root_path/points
-        self.results_path = self.views[0].root_path + '/points/'
+        self.results_path = os.path.join(self.views[0].root_path, 'points')
 
     def get_index_of_view(self, view):
         """Extracts the position of a view in the list of views"""
@@ -156,7 +156,7 @@ class SFM:
         """Saves the reconstructed 3D points to ply files using Open3D"""
 
         number = len(self.done)
-        filename = self.results_path + str(number) + '_images.ply'
+        filename = os.path.join(self.results_path, str(number) + '_images.ply')
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(self.points_3D)
         o3d.io.write_point_cloud(filename, pcd)
