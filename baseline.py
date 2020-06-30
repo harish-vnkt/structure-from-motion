@@ -85,10 +85,9 @@ class Baseline:
 
             # calculate 3D point
             point_3D = get_3D_point(u1_normalized, P1, u2_normalized, P2)
-            point_3D_homogeneous = cv2.convertPointsToHomogeneous(point_3D.T)[:, 0, :]
 
             # calculate reprojection error
-            error = calculate_reprojection_error(point_3D_homogeneous, u2[0:2], K, P2)
+            error = calculate_reprojection_error(point_3D, u2[0:2], K, R, t)
             reprojection_error.append(error)
 
             # append point

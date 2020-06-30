@@ -57,7 +57,10 @@ class SFM:
             baseline_pose = Baseline(view1, view2, match_object)
             view2.R, view2.t = baseline_pose.get_pose(self.K)
 
-            self.triangulate(view1, view2)
+            rpe1, rpe2 = self.triangulate(view1, view2)
+            self.errors.append(np.mean(rpe1))
+            self.errors.append(np.mean(rpe2))
+
             self.done.append(view1)
             self.done.append(view2)
 
@@ -65,6 +68,7 @@ class SFM:
         else:
 
             view1.R, view1.t = self.compute_pose_PNP(view1)
+            errors = []
 
             # reconstruct unreconstructed points from all of the previous views
             for i, old_view in enumerate(self.done):
@@ -72,9 +76,11 @@ class SFM:
                 match_object = self.matches[(old_view.name, view1.name)]
                 _ = remove_outliers_using_F(old_view, view1, match_object)
                 self.remove_mapped_points(match_object, i)
-                self.triangulate(old_view, view1)
+                _, rpe = self.triangulate(old_view, view1)
+                errors += rpe
 
             self.done.append(view1)
+            self.errors.append(np.mean(errors))
 
     def triangulate(self, view1, view2):
         """Triangulates 3D points from two views whose poses have been recovered. Also updates the point_map dictionary"""
@@ -90,7 +96,8 @@ class SFM:
                                                                   index_list2=match_object.inliers2)
         pixel_points1 = cv2.convertPointsToHomogeneous(pixel_points1)[:, 0, :]
         pixel_points2 = cv2.convertPointsToHomogeneous(pixel_points2)[:, 0, :]
-        reprojection_error = []
+        reprojection_error1 = []
+        reprojection_error2 = []
 
         for i in range(len(pixel_points1)):
 
@@ -101,10 +108,12 @@ class SFM:
             u2_normalized = K_inv.dot(u2)
 
             point_3D = get_3D_point(u1_normalized, P1, u2_normalized, P2)
-            point_3D_homogeneous = cv2.convertPointsToHomogeneous(point_3D.T)[:, 0, :]
-            error = calculate_reprojection_error(point_3D_homogeneous, u2[0:2], self.K, P2)
-            reprojection_error.append(error)
             self.points_3D = np.concatenate((self.points_3D, point_3D.T), axis=0)
+
+            error1 = calculate_reprojection_error(point_3D, u1[0:2], self.K, view1.R, view1.t)
+            reprojection_error1.append(error1)
+            error2 = calculate_reprojection_error(point_3D, u2[0:2], self.K, view2.R, view2.t)
+            reprojection_error2.append(error2)
 
             # updates point_map with the key (index of view, index of point in the view) and value point_counter
             # multiple keys can have the same value because a 3D point is reconstructed using 2 points
@@ -112,7 +121,7 @@ class SFM:
             self.point_map[(self.get_index_of_view(view2), match_object.inliers2[i])] = self.point_counter
             self.point_counter += 1
 
-        self.errors.append(np.mean(reprojection_error))
+        return reprojection_error1, reprojection_error2
 
     def compute_pose_PNP(self, view):
         """Computes pose of new view using perspective n-point"""
