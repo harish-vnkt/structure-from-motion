@@ -148,7 +148,8 @@ class SFM:
                 points_3D = np.concatenate((points_3D, point_3D), axis=0)
 
         # compute new pose using solvePnPRansac
-        _, R, t, _ = cv2.solvePnPRansac(points_3D[:, np.newaxis], points_2D[:, np.newaxis], self.K, None)
+        _, R, t, _ = cv2.solvePnPRansac(points_3D[:, np.newaxis], points_2D[:, np.newaxis], self.K, None,
+                                        confidence=0.99, reprojectionError=8.0, flags=cv2.SOLVEPNP_DLS)
         R, _ = cv2.Rodrigues(R)
         return R, t
 
