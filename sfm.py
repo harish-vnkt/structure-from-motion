@@ -178,7 +178,8 @@ class SFM:
         baseline_view1, baseline_view2 = self.views[0], self.views[1]
         logging.info("Computing baseline pose and reconstructing points")
         self.compute_pose(view1=baseline_view1, view2=baseline_view2, is_baseline=True)
-        logging.info("Reprojection error for %d images is %f", len(self.done), self.errors[0])
+        logging.info("Mean reprojection error for 1 image is %f", self.errors[0])
+        logging.info("Mean reprojection error for 2 images is %f", self.errors[1])
         self.plot_points()
         logging.info("Points plotted for %d views", len(self.done))
 
@@ -186,6 +187,6 @@ class SFM:
 
             logging.info("Computing pose and reconstructing points for view %d", i+1)
             self.compute_pose(view1=self.views[i])
-            logging.info("Reprojection error for %d images is %f", i+1, self.errors[i-1])
+            logging.info("Mean reprojection error for %d images is %f", i+1, self.errors[i])
             self.plot_points()
             logging.info("Points plotted for %d views", i+1)
