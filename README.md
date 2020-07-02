@@ -43,9 +43,26 @@ Or:
 
 Each of the above mentioned folders have an ```images/``` folder that contains the images, along with a txt file called ```K.txt``` which contains the intrinsic matrix. If you are experimenting on a new dataset, use the same folder structure. The code stores the computed features and matches in respective pkl files inside the root directory to speed up repeated computations. The results are stored as ply files inside a ```points/``` folder inside the root directory. For visualizing the point clouds inside the ply files, use suitable software such as [MeshLab](https://www.meshlab.net/#description).
 
+### Results
+
+From the ```fountain-P11``` image-set:
+
+1. Original image
+
+![](./images/0010.jpg)
+
+2. Reconstruction after 3 images
+
+![](./images/example02.png)
+
+3, Reconstruction after 6 images
+
+![](./images/example102.png)
+
 ### Limitations
 
-This code is a simplified version of incremental SfM. Incremental SfM adds images sequentially to the reconstruction wheras global SfM considers all camera poses at once. In incremental SfM, the next view is chosen for reconstruction based on how many triangulated points it contains. The process examines the available views to choose the best one. In this code, the images are assumed to be taken in sequential order. For example, ```0003.jpg``` is taken before ```0004.jpg```, and the baseline views are ```0000.jpg``` and ```0001.jpg```. The images are sorted based on their names before reconstruction. View selection and filtering is currently not implemented here.
+- This code is a simplified version of incremental SfM. Incremental SfM adds images sequentially to the reconstruction wheras global SfM considers all camera poses at once. In incremental SfM, the next view is chosen for reconstruction based on how many triangulated points it contains. The process examines the available views to choose the best one. In this code, the images are assumed to be taken in sequential order. For example, ```0003.jpg``` is taken before ```0004.jpg```, and the baseline views are ```0000.jpg``` and ```0001.jpg```. The images are sorted based on their names before reconstruction. View selection and filtering is currently not implemented here
+- Bundle adjustment is not implemented here, so some reconstructions may have high reprojection error and consequentially, erroneous reconstructions
 
 ### References
 
